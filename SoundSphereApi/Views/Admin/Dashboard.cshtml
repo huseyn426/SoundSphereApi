@@ -1,0 +1,111 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Admin Dashboard";
+
+    var userCount = ViewBag.UserCount ?? 0;
+    var trackCount = ViewBag.TrackCount ?? 0;
+    var playlistCount = ViewBag.PlaylistCount ?? 0;
+    var subCount = ViewBag.SubCount ?? 0;
+    var users = ViewBag.Users as IEnumerable<SoundSphereApi.DTOs.Admin.UserGetDto>;
+    var roles = ViewBag.Roles as IEnumerable<SoundSphereApi.Models.Identity.Role>;
+}
+
+<section class="admin-page">
+    <div class="tracks-toolbar">
+        <div>
+            <div class="page-label">Administration</div>
+            <h1 data-i18n="nav.admin.dashboard">Dashboard</h1>
+            <p class="tracks-subtitle">Manage users, content and platform settings.</p>
+        </div>
+    </div>
+
+    @if (TempData["AdminSuccess"] != null)
+    {
+        <div class="toast-success">@TempData["AdminSuccess"]</div>
+    }
+
+    <div class="stats-grid">
+        <a href="/AdminPanel/Users" class="stat-card" style="text-decoration:none; color:inherit;">
+            <div class="stat-card-icon" style="background:rgba(59,130,246,0.15);color:#60a5fa;">👤</div>
+            <div class="stat-card-info">
+                <div class="stat-card-num">@userCount</div>
+                <div class="stat-card-label" data-i18n="admin.users">Users</div>
+            </div>
+        </a>
+        <a href="/AdminPanel/Tracks" class="stat-card" style="text-decoration:none; color:inherit;">
+            <div class="stat-card-icon" style="background:rgba(29,185,84,0.15);color:#86efac;">🎵</div>
+            <div class="stat-card-info">
+                <div class="stat-card-num">@trackCount</div>
+                <div class="stat-card-label" data-i18n="nav.admin.tracks">Tracks</div>
+            </div>
+        </a>
+        <a href="/AdminPanel/Catalog" class="stat-card" style="text-decoration:none; color:inherit;">
+            <div class="stat-card-icon" style="background:rgba(168,85,247,0.15);color:#c084fc;">📋</div>
+            <div class="stat-card-info">
+                <div class="stat-card-num">@playlistCount</div>
+                <div class="stat-card-label" data-i18n="nav.playlists">Playlists</div>
+            </div>
+        </a>
+        <div class="stat-card">
+            <div class="stat-card-icon" style="background:rgba(251,191,36,0.15);color:#fbbf24;">💎</div>
+            <div class="stat-card-info">
+                <div class="stat-card-num">@subCount</div>
+                <div class="stat-card-label" data-i18n="admin.activeSubscriptions">Subscriptions</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    function toggleUserStatus(userId, currentStatus) {
+        const action = currentStatus ? "block" : "unblock";
+        if (!confirm(`Are you sure you want to ${action} this user?`)) {
+            return;
+        }
+
+        const newStatus = !currentStatus;
+
+        fetch('/AdminPanel/ToggleStatusAjax', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ userId: userId, isActive: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show toast
+                const toast = document.createElement('div');
+                toast.className = 'toast-success';
+                toast.style.position = 'fixed';
+                toast.style.bottom = '20px';
+                toast.style.right = '20px';
+                toast.innerText = action === 'unblock' ? 'User unblocked successfully ✓' : 'User blocked successfully ✓';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+
+                // Update UI without reload
+                const badge = document.getElementById(`status-badge-${userId}`);
+                const btn = document.getElementById(`toggle-btn-${userId}`);
+
+                if (newStatus) {
+                    badge.className = 'status-badge status-active';
+                    badge.innerText = 'Active';
+                    btn.className = 'mini-btn btn-remove';
+                    btn.innerText = 'Block';
+                } else {
+                    badge.className = 'status-badge status-inactive';
+                    badge.innerText = 'Blocked';
+                    btn.className = 'mini-btn';
+                    btn.innerText = 'Unblock';
+                }
+
+                // Update onclick handler
+                btn.setAttribute('onclick', `toggleUserStatus(${userId}, ${newStatus})`);
+            } else {
+                alert('Error updating status: ' + data.message);
+            }
+        });
+    }
+</script>

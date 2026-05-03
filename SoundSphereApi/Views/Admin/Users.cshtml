@@ -1,0 +1,132 @@
+@model IEnumerable<SoundSphereApi.DTOs.Admin.UserGetDto>
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "User Management";
+}
+
+<section class="admin-page">
+    <div class="tracks-toolbar">
+        <div>
+            <div class="page-label">Administration</div>
+            <h1 data-i18n="admin.users">User Management</h1>
+            <p class="tracks-subtitle">Manage platform users, roles and access status.</p>
+        </div>
+    </div>
+
+    <div class="admin-section">
+        <div class="admin-table">
+            <div class="admin-table-head">
+                <div>ID</div>
+                <div data-i18n="auth.username">Username</div>
+                <div data-i18n="auth.email">Email</div>
+                <div data-i18n="profile.role">Role</div>
+                <div data-i18n="admin.active">Status</div>
+                <div data-i18n="admin.actions">Actions</div>
+            </div>
+
+            @foreach (var user in Model)
+            {
+                <div class="admin-table-row">
+                    <div>@user.Id</div>
+                    <div class="fw-bold">@user.UserName</div>
+                    <div>@user.Email</div>
+                    <div>
+                        <span class="role-badge @(user.RoleName == "Admin" ? "role-admin" : "")">@user.RoleName</span>
+                    </div>
+                    <div>
+                        <span id="status-badge-@user.Id" class="status-badge @(user.IsActive ? "status-active" : "status-inactive")" data-i18n="@(user.IsActive ? "admin.active" : "admin.blocked")">
+                            @(user.IsActive ? "Active" : "Blocked")
+                        </span>
+                    </div>
+                    <div class="admin-actions">
+                        @* Buttons: blocked -> Unblock (red), active -> Block (gray) *@
+                        <button id="toggle-btn-@user.Id" 
+                                class="mini-btn @(user.IsActive ? "" : "btn-remove")" 
+                                onclick="toggleUserStatus(@user.Id, @(user.IsActive.ToString().ToLower()))"
+                                data-i18n="@(user.IsActive ? "admin.blockUser" : "admin.unblockUser")">
+                            @(user.IsActive ? "Block" : "Unblock")
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<script>
+    function toggleUserStatus(userId, currentStatus) {
+        const action = currentStatus ? "block" : "unblock";
+        const confirmMsg = currentStatus 
+            ? window.t('admin.blockConfirm') || `Are you sure you want to block this user?`
+            : window.t('admin.unblockConfirm') || `Are you sure you want to unblock this user?`;
+
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+
+        const endpoint = `/api/admin/users/${userId}/${action}`;
+
+        fetch(endpoint, {
+            method: 'PUT',
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const isSuccess = data.success === true || data.Success === true;
+            if (isSuccess) {
+                // Show toast
+                const toast = document.createElement('div');
+                toast.className = 'toast-success';
+                toast.style.position = 'fixed';
+                toast.style.bottom = '20px';
+                toast.style.right = '20px';
+                toast.style.zIndex = '9999';
+                
+                const toastMsgKey = action === 'unblock' ? 'toast.userUnblocked' : 'toast.userBlocked';
+                toast.innerText = window.t(toastMsgKey) || (action === 'unblock' ? 'User unblocked ✓' : 'User blocked ✓');
+                
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transition = 'opacity 0.5s ease';
+                    setTimeout(() => toast.remove(), 500);
+                }, 3000);
+
+                // Update UI
+                const newStatus = !currentStatus;
+                const badge = document.getElementById(`status-badge-${userId}`);
+                const btn = document.getElementById(`toggle-btn-${userId}`);
+
+                if (newStatus) {
+                    badge.className = 'status-badge status-active';
+                    badge.innerText = window.t('admin.active');
+                    badge.setAttribute('data-i18n', 'admin.active');
+                    
+                    btn.className = 'mini-btn';
+                    btn.innerText = window.t('admin.blockUser');
+                    btn.setAttribute('data-i18n', 'admin.blockUser');
+                } else {
+                    badge.className = 'status-badge status-inactive';
+                    badge.innerText = window.t('admin.blocked');
+                    badge.setAttribute('data-i18n', 'admin.blocked');
+                    
+                    btn.className = 'mini-btn btn-remove';
+                    btn.innerText = window.t('admin.unblockUser');
+                    btn.setAttribute('data-i18n', 'admin.unblockUser');
+                }
+
+                // Update onclick handler
+                btn.onclick = () => toggleUserStatus(userId, newStatus);
+            } else {
+                alert(window.t('common.error') + ': ' + (data.message || 'Failed to update status'));
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Request failed');
+        });
+    }
+</script>

@@ -1,0 +1,232 @@
+@using SoundSphereApi.Helpers
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Home";
+    var sessionUserId = Context.Session.GetInt32("UserId");
+    bool isLoggedIn = sessionUserId != null;
+
+    string Js(string? s)
+    {
+        if (string.IsNullOrEmpty(s)) return "";
+        return s.Replace("\\", "\\\\").Replace("'", "\\'").Replace("\r", " ").Replace("\n", " ");
+    }
+
+    var hour = DateTime.Now.Hour;
+    var greetingKey = hour < 12 ? "home.greetingMorning" : (hour < 18 ? "home.greetingAfternoon" : "home.greetingEvening");
+    var timeLabelEn = hour < 12 ? "Good morning" : (hour < 18 ? "Good afternoon" : "Good evening");
+}
+
+@if (isLoggedIn)
+{
+    var recentTracks = (ViewBag.RecentTracks as IEnumerable<SoundSphereApi.DTOs.Music.TrackGetDto>) ?? Enumerable.Empty<SoundSphereApi.DTOs.Music.TrackGetDto>();
+    var myPlaylists = (ViewBag.MyPlaylists as IEnumerable<SoundSphereApi.DTOs.Playlist.PlaylistGetDto>) ?? Enumerable.Empty<SoundSphereApi.DTOs.Playlist.PlaylistGetDto>();
+    var popularTracks = (ViewBag.PopularTracks as IEnumerable<SoundSphereApi.DTOs.Music.TrackGetDto>) ?? Enumerable.Empty<SoundSphereApi.DTOs.Music.TrackGetDto>();
+    var popularArtists = (ViewBag.PopularArtists as IEnumerable<SoundSphereApi.DTOs.Music.ArtistGetDto>) ?? Enumerable.Empty<SoundSphereApi.DTOs.Music.ArtistGetDto>();
+    var userName = ViewBag.UserName as string ?? "User";
+
+    <div class="home-spotify fade-in">
+        <header class="home-welcome">
+            <h1 class="home-welcome-title">
+                Welcome back, <span class="home-welcome-name">@userName</span>!
+            </h1>
+            <p class="home-welcome-sub"><span data-i18n="@greetingKey">@timeLabelEn</span></p>
+        </header>
+
+        @if (popularArtists.Any())
+        {
+            <section class="home-section">
+                <div class="home-section-head">
+                    <h2 class="home-section-title" data-i18n="home.popularArtists">Popular Artists</h2>
+                    <a href="/Music/Explore" class="home-section-seeall" data-i18n="common.seeAll">See all →</a>
+                </div>
+                <div class="home-artists-scroll">
+                    @foreach (var artist in popularArtists)
+                    {
+                        var initial = string.IsNullOrWhiteSpace(artist.Name) ? "?" : artist.Name.Trim().Substring(0, 1).ToUpperInvariant();
+                        <a href="/Music/Artist/@artist.Id" class="home-artist-card">
+                            @if (!string.IsNullOrWhiteSpace(artist.ImageUrl))
+                            {
+                                <div class="home-artist-avatar" style="background-image:url('@artist.ImageUrl')"></div>
+                            }
+                            else
+                            {
+                                <div class="home-artist-avatar home-artist-avatar--initial" aria-hidden="true">@initial</div>
+                            }
+                            <span class="home-artist-name">@artist.Name</span>
+                        </a>
+                    }
+                </div>
+            </section>
+        }
+
+        @if (recentTracks.Any())
+        {
+            <section class="home-section">
+                <div class="home-section-head">
+                    <h2 class="home-section-title" data-i18n="home.recentlyPlayed">Recently Played</h2>
+                    <a href="/Music/History" class="home-section-seeall" data-i18n="common.seeAll">See all →</a>
+                </div>
+                <div class="home-media-scroll">
+                    @foreach (var track in recentTracks)
+                    {
+                        <div class="home-media-card"
+                             role="button"
+                             tabindex="0"
+                             onclick="playSingleTrack('@Js(track.Title)', '@Js(track.ArtistName)', '@Js(track.AudioUrl)', '@Js(track.CoverImageUrl)', '@track.Duration.ToString(@"m\:ss")', '@track.Id')">
+                            <div class="home-media-cover" style="@(string.IsNullOrEmpty(track.CoverImageUrl) ? "" : $"background-image:url({track.CoverImageUrl});")">
+                                <div class="home-media-overlay"></div>
+                                <span class="home-media-play" aria-hidden="true">▶</span>
+                            </div>
+                            <div class="home-media-info">
+                                <div class="home-media-title">@track.Title</div>
+                                <div class="home-media-artist">@track.ArtistName</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </section>
+        }
+
+        <section class="home-section">
+            <div class="home-section-head">
+                <h2 class="home-section-title" data-i18n="home.yourPlaylists">Your Playlists</h2>
+                <a href="/Playlists" class="home-section-seeall" data-i18n="common.seeAll">See all →</a>
+            </div>
+            <div class="home-media-scroll">
+                @foreach (var pl in myPlaylists)
+                {
+                    <a href="/Playlists/Details/@pl.Id" class="home-media-card home-media-card--link">
+                        <div class="home-media-cover @(string.IsNullOrEmpty(pl.CoverImageUrl) ? "home-media-cover--placeholder" : "")"
+                             style="@(string.IsNullOrEmpty(pl.CoverImageUrl) ? "" : $"background-image:url({pl.CoverImageUrl});")">
+                            <div class="home-media-overlay home-media-overlay--subtle"></div>
+                            <span class="home-media-play home-media-play--peek" aria-hidden="true">▶</span>
+                        </div>
+                        <div class="home-media-info">
+                            <div class="home-media-title">@pl.Name</div>
+                            <div class="home-media-artist">@(pl.IsPublic ? "Public" : "Private")</div>
+                        </div>
+                    </a>
+                }
+                <a href="/Playlists/Create" class="home-media-card home-media-card--create">
+                    <div class="home-create-inner">
+                        <span class="home-create-plus" aria-hidden="true">+</span>
+                        <span class="home-create-label" data-i18n="playlists.create">Create Playlist</span>
+                    </div>
+                </a>
+            </div>
+            @if (!myPlaylists.Any())
+            {
+                <p class="home-playlists-hint" data-i18n="playlists.noPlaylists">You have no playlists yet. Create your first one!</p>
+            }
+        </section>
+
+        @if (popularTracks.Any())
+        {
+            <section class="home-section home-section--table">
+                <div class="home-section-head">
+                    <h2 class="home-section-title" data-i18n="home.popularTracks">Popular Tracks</h2>
+                    <a href="/Music/Charts" class="home-section-seeall" data-i18n="common.seeAll">See all →</a>
+                </div>
+                <div class="track-table home-track-table">
+                    @{ var i = 1; }
+                    @foreach (var track in popularTracks)
+                    {
+                        <div class="track-item"
+                             data-track-id="@track.Id"
+                             data-title="@track.Title"
+                             data-artist="@track.ArtistName"
+                             data-audio="@track.AudioUrl"
+                             data-cover="@track.CoverImageUrl"
+                             data-duration="@track.Duration.ToString(@"m\:ss")">
+                            <div class="track-index">
+                                <span class="index-num">@i</span>
+                                <button type="button" class="play-icon" onclick="playTrackFromList(this)">▶</button>
+                            </div>
+                            <div class="track-title-cell">
+                                <div class="track-cover-mini" style="@(string.IsNullOrEmpty(track.CoverImageUrl) ? "" : $"background-image:url({track.CoverImageUrl});background-size:cover;")"></div>
+                                <div class="track-title-wrap">
+                                    <a href="/Music/Details/@track.Id" class="track-name">@track.Title</a>
+                                    <div class="track-caption">@track.ArtistName</div>
+                                </div>
+                            </div>
+                            <div class="track-col">@track.ArtistName</div>
+                            <div class="track-col">@track.Duration.ToString(@"m\:ss")</div>
+                        </div>
+                        i++;
+                    }
+                </div>
+            </section>
+        }
+    </div>
+
+    <script src="~/js/player.js" asp-append-version="true"></script>
+}
+else
+{
+    var plans = ViewBag.Plans as IEnumerable<SoundSphereApi.DTOs.Payment.SubscriptionPlanGetDto>;
+
+    <div class="landing-page fade-in">
+        <section class="hero-section">
+            <div class="hero-badge" data-i18n="home.hero.tag">@UiText.Get(Context, "hero_badge")</div>
+            <h1 class="hero-title" data-i18n="home.hero.title">Feel every track in one clean space.</h1>
+            <p class="hero-desc" data-i18n="home.hero.description">Discover music, build playlists, follow activity, and manage your listening experience through a dark, modern interface inspired by top streaming platforms.</p>
+            <div class="hero-buttons">
+                <a href="/Music/Tracks" class="btn-primary" data-i18n="home.hero.openTracks">@UiText.Get(Context, "hero_button_primary")</a>
+                <a href="/Account/Register" class="btn-secondary" data-i18n="home.hero.createAccount">@UiText.Get(Context, "hero_button_secondary")</a>
+            </div>
+        </section>
+
+        <section class="features-section">
+            <h2 style="text-align:center; margin-bottom: 40px;" data-i18n="home.features.title">Why SoundSphere?</h2>
+            <div class="features-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
+                <div class="feature-card" style="padding: 24px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+                    <div style="font-size: 2rem; margin-bottom: 12px;">🔍</div>
+                    <h3 data-i18n="home.features.1.title">Fast Discovery</h3>
+                    <p style="color: #94a3b8; font-size: 0.9rem;" data-i18n="home.features.1.desc">Search across tracks, artists, albums, and genres through a cleaner music-first interface.</p>
+                </div>
+                <div class="feature-card" style="padding: 24px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+                    <div style="font-size: 2rem; margin-bottom: 12px;">📋</div>
+                    <h3 data-i18n="home.features.2.title">Playlist Flow</h3>
+                    <p style="color: #94a3b8; font-size: 0.9rem;" data-i18n="home.features.2.desc">Build and manage personal playlists seamlessly with secure ownership.</p>
+                </div>
+                <div class="feature-card" style="padding: 24px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+                    <div style="font-size: 2rem; margin-bottom: 12px;">💎</div>
+                    <h3 data-i18n="home.features.3.title">Premium Audio</h3>
+                    <p style="color: #94a3b8; font-size: 0.9rem;" data-i18n="home.features.3.desc">Enjoy ad-free listening and high-quality audio with our flexible subscription plans.</p>
+                </div>
+            </div>
+        </section>
+
+        @if (plans != null && plans.Any())
+        {
+            <section class="plans-section" style="margin-top: 60px;">
+                <h2 style="text-align:center; margin-bottom: 40px;" data-i18n="subscription.choosePlan">Choose Your Plan</h2>
+                <div class="plans-grid">
+                    @foreach (var plan in plans.Take(2))
+                    {
+                        var isPremium = plan.Name == "Premium";
+                        <div class="plan-card @(isPremium ? "plan-featured" : "")" style="text-align:center;">
+                            @if (isPremium)
+                            {
+                                <div class="plan-badge">Most Popular</div>
+                            }
+                            <h3 class="plan-name">@plan.Name</h3>
+                            <div class="plan-price" style="justify-content:center;">
+                                @if (plan.Price == 0)
+                                {
+                                    <span class="price-amount">Free</span>
+                                }
+                                else
+                                {
+                                    <span class="price-amount">$@plan.Price.ToString("F2")</span><span class="price-period">/mo</span>
+                                }
+                            </div>
+                            <p class="plan-desc" style="margin-bottom: 24px;">@plan.Description</p>
+                            <a href="/Account/Register" class="@(isPremium ? "btn-primary" : "btn-secondary") plan-btn">Get Started</a>
+                        </div>
+                    }
+                </div>
+            </section>
+        }
+    </div>
+}

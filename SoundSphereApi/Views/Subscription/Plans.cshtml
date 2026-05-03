@@ -1,0 +1,94 @@
+@model IEnumerable<SoundSphereApi.DTOs.Payment.SubscriptionPlanGetDto>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Subscription Plans";
+    var currentPlan = ViewBag.CurrentPlan as string;
+}
+
+<section class="tracks-page">
+    <div class="tracks-toolbar">
+        <div>
+            <div class="page-label">Premium</div>
+            <h1 data-i18n="subscription.choosePlan">Choose Your Plan</h1>
+            <p class="tracks-subtitle" data-i18n="subscription.subtitle">Unlock the full SoundSphere experience with premium features.</p>
+        </div>
+    </div>
+
+    @if (TempData["SubSuccess"] != null)
+    {
+        <div class="toast-success">@TempData["SubSuccess"]</div>
+    }
+    @if (TempData["SubError"] != null)
+    {
+        <div class="toast-error">@TempData["SubError"]</div>
+    }
+
+    <div class="plans-grid">
+        @foreach (var plan in Model)
+        {
+            var isCurrent = plan.Name == currentPlan;
+            var isPremium = plan.Name == "Premium";
+            <div class="plan-card @(isPremium ? "plan-featured" : "") @(isCurrent ? "plan-active" : "")">
+                @if (isPremium)
+                {
+                    <div class="plan-badge" data-i18n="subscription.popular">Most Popular</div>
+                }
+                @if (isCurrent)
+                {
+                    <div class="plan-badge plan-badge-current" data-i18n="subscription.current">Current Plan</div>
+                }
+                <h3 class="plan-name">@plan.Name</h3>
+                <div class="plan-price">
+                    @if (plan.Price == 0)
+                    {
+                        <span class="price-amount" data-i18n="subscription.free">Free</span>
+                    }
+                    else
+                    {
+                        <span class="price-amount">$@plan.Price.ToString("F2")</span>
+                        <span class="price-period" data-i18n="subscription.perMonth">/month</span>
+                    }
+                </div>
+                <p class="plan-desc">@plan.Description</p>
+                <ul class="plan-features">
+                    @if (plan.Name == "Free")
+                    {
+                        <li>✓ Access to all tracks</li>
+                        <li>✓ Create playlists</li>
+                        <li>✕ Ads included</li>
+                        <li>✕ Limited skips</li>
+                    }
+                    else if (plan.Name == "Premium")
+                    {
+                        <li>✓ Ad-free listening</li>
+                        <li>✓ Unlimited skips</li>
+                        <li>✓ Offline mode</li>
+                        <li>✓ High quality audio</li>
+                    }
+                    else
+                    {
+                        <li>✓ Everything in Premium</li>
+                        <li>✓ Up to 6 accounts</li>
+                        <li>✓ Family mix playlist</li>
+                        <li>✓ Parental controls</li>
+                    }
+                </ul>
+
+                @if (!isCurrent)
+                {
+                    <form method="post" asp-action="Subscribe">
+                        <input type="hidden" name="planId" value="@plan.Id" />
+                        <button type="submit" class="@(isPremium ? "btn-primary" : "btn-secondary") plan-btn">
+                            @(plan.Price == 0 ? "Get Started" : "Subscribe")
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <button class="btn-secondary plan-btn" disabled data-i18n="subscription.active">Active</button>
+                }
+            </div>
+        }
+    </div>
+</section>

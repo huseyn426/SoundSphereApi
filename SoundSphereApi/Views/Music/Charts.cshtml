@@ -1,0 +1,61 @@
+@model IEnumerable<SoundSphereApi.DTOs.Music.TrackGetDto>
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="tracks-page">
+    <div class="tracks-toolbar">
+        <div>
+            <div class="page-label" data-i18n="nav.charts">Charts</div>
+            <h1 data-i18n="charts.topTracks">Top Tracks</h1>
+            <p class="tracks-subtitle" data-i18n="charts.thisWeek">The most popular tracks this week</p>
+        </div>
+    </div>
+
+    <div class="track-table">
+        <div class="track-head">
+            <div>#</div>
+            <div data-i18n="playlists.name">Title</div>
+            <div data-i18n="tracks.artist">Artist</div>
+            <div data-i18n="common.plays">Plays</div>
+            <div data-i18n="admin.actions">Action</div>
+        </div>
+
+        @{ var index = 1; }
+        @foreach (var track in Model)
+        {
+            <div class="track-item"
+                 data-track-id="@track.Id"
+                 data-title="@track.Title"
+                 data-artist="@track.ArtistName"
+                 data-audio="@track.AudioUrl"
+                 data-cover="@track.CoverImageUrl">
+
+                <div class="track-index">
+                    <span class="index-num">@index</span>
+                    <button class="play-icon" onclick="playTrackFromList(this)">▶</button>
+                </div>
+
+                <div class="track-title-cell">
+                    <div class="track-cover-mini"
+                         style="@(string.IsNullOrEmpty(track.CoverImageUrl) ? "" : $"background-image:url({track.CoverImageUrl});background-size:cover;")">
+                    </div>
+                    <div class="track-title-wrap">
+                        <a href="/Music/Details/@track.Id" class="track-name" style="text-decoration: none; color: inherit;">@track.Title</a>
+                        <div class="track-caption">@track.ArtistName</div>
+                    </div>
+                </div>
+
+                <div class="track-col">@track.ArtistName</div>
+                <div class="track-col">@track.PlayCount</div>
+
+                <div class="track-action">
+                     <a href="/Music/Details/@track.Id" class="mini-btn">→</a>
+                </div>
+            </div>
+            index++;
+        }
+    </div>
+</section>
+
+<script src="~/js/player.js"></script>

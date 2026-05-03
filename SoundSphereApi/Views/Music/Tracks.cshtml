@@ -1,0 +1,124 @@
+@model IEnumerable<SoundSphereApi.DTOs.Music.TrackGetDto>
+@using SoundSphereApi.Helpers
+@using System.Text.Json
+@inject SoundSphereApi.Services.Interfaces.IPlaylistService PlaylistService
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var search = ViewBag.Search as string;
+    var userId = Context.Session.GetInt32("UserId");
+    var playlists = Enumerable.Empty<SoundSphereApi.DTOs.Playlist.PlaylistGetDto>();
+
+    if (userId != null)
+    {
+        playlists = (await PlaylistService.GetAllPlaylistsAsync()).Where(x => x.UserId == userId.Value);
+    }
+}
+
+<section class="tracks-page">
+    <div class="tracks-toolbar">
+        <div>
+            <div class="page-label">Library</div>
+            <h1 data-i18n="tracks.title">@UiText.Get(Context, "tracks_title")</h1>
+            <p class="tracks-subtitle">
+                Browse your catalog in a cleaner, more music-first layout.
+            </p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(search))
+        {
+            <a href="/Music/Tracks" class="clear-link" data-i18n="common.cancel">@UiText.Get(Context, "clear_button")</a>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state-card">
+            <div class="empty-icon">🎵</div>
+            <h3 data-i18n="tracks.noTracks">@UiText.Get(Context, "tracks_empty")</h3>
+            <p>Try a different search or check back later.</p>
+        </div>
+    }
+    else
+    {
+        <div class="track-table track-table--library">
+            <div class="track-head track-head--library">
+                <div>#</div>
+                <div data-i18n="playlists.name">Title</div>
+                <div data-i18n="tracks.artist">@UiText.Get(Context, "artist")</div>
+                <div data-i18n="tracks.album">@UiText.Get(Context, "album")</div>
+                <div data-i18n="tracks.genre">@UiText.Get(Context, "genre")</div>
+                <div data-i18n="common.duration">@UiText.Get(Context, "duration")</div>
+                <div data-i18n="common.plays">@UiText.Get(Context, "plays")</div>
+                <div class="track-head-action" data-i18n="admin.actions">Action</div>
+            </div>
+
+            @{
+                var index = 1;
+            }
+
+            @foreach (var track in Model)
+            {
+                <div class="track-item track-item--library"
+                     data-track-id="@track.Id"
+                     data-title="@track.Title"
+                     data-artist="@track.ArtistName"
+                     data-audio="@track.AudioUrl"
+                     data-cover="@track.CoverImageUrl"
+                     data-duration="@track.Duration.ToString(@"m\:ss")">
+
+                    <div class="track-index">
+                        <span class="index-num">@index</span>
+                        <button type="button" class="play-icon" onclick="playTrackFromList(this)">▶</button>
+                    </div>
+
+                    <div class="track-title-cell">
+                        <div class="track-cover-mini"
+                             style="@(string.IsNullOrEmpty(track.CoverImageUrl) ? "" : $"background-image:url({track.CoverImageUrl});background-size:cover;")">
+                        </div>
+                        <div class="track-title-wrap">
+                            <a href="/Music/Details/@track.Id" class="track-name" style="text-decoration: none; color: inherit;">@track.Title</a>
+                            <div class="track-caption">@track.ArtistName</div>
+                        </div>
+                    </div>
+
+                    <div class="track-col">@track.ArtistName</div>
+                    <div class="track-col">@track.AlbumTitle</div>
+                    <div class="track-col">@track.GenreName</div>
+                    <div class="track-col">@track.Duration.ToString(@"m\:ss")</div>
+                    <div class="track-col">@track.PlayCount</div>
+
+                    <div class="track-action track-action--menu">
+                        @if (userId == null)
+                        {
+                            <a href="/Account/Login" class="mini-btn" data-i18n="auth.loginTitle">Login</a>
+                        }
+                        else
+                        {
+                            <div class="track-menu-wrap">
+                                <button type="button" class="track-menu-trigger" aria-expanded="false" aria-haspopup="true" aria-label="Track actions">⋯</button>
+                                <div class="track-menu-dropdown" hidden>
+                                    <button type="button" class="track-menu-item" data-action="play"><span class="track-menu-ico">▶</span> Play now</button>
+                                    <button type="button" class="track-menu-item" data-action="playlist"><span class="track-menu-ico">＋</span> Add to playlist</button>
+                                    <button type="button" class="track-menu-item" data-action="like"><span class="track-menu-ico">❤️</span> Like</button>
+                                    <button type="button" class="track-menu-item" data-action="queue"><span class="track-menu-ico">📋</span> Add to queue</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                index++;
+            }
+        </div>
+    }
+</section>
+
+@if (userId != null)
+{
+    <script type="application/json" id="ss-user-playlists-json">@Html.Raw(JsonSerializer.Serialize(playlists.Select(p => new { id = p.Id, name = p.Name, coverImageUrl = p.CoverImageUrl })))</script>
+}
+
+<script src="~/js/player.js" asp-append-version="true"></script>
+<script src="~/js/playlists-ui.js" asp-append-version="true"></script>
+<script src="~/js/track-row-menu.js" asp-append-version="true"></script>

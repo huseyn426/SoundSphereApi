@@ -1,0 +1,129 @@
+@model IEnumerable<SoundSphereApi.DTOs.Playlist.PlaylistTrackGetDto>
+@using SoundSphereApi.Helpers
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var playlist = ViewBag.Playlist as SoundSphereApi.DTOs.Playlist.PlaylistGetDto;
+    bool isOwner = ViewBag.IsOwner ?? false;
+    ViewData["Title"] = playlist?.Name ?? "Playlist";
+}
+
+<section class="playlist-detail">
+    <div class="playlist-detail-header">
+        <div class="playlist-detail-cover">
+            @if (!string.IsNullOrEmpty(playlist?.CoverImageUrl))
+            {
+                <img src="@playlist.CoverImageUrl" alt="@playlist.Name" />
+            }
+            else
+            {
+                <div class="playlist-cover-icon">♪</div>
+            }
+        </div>
+        <div class="playlist-detail-info">
+            <div class="playlist-type-badge">@(playlist!.IsPublic ? "Public Playlist" : "Private Playlist")</div>
+            <h1>@playlist.Name</h1>
+            <p class="playlist-detail-desc">
+                @(string.IsNullOrWhiteSpace(playlist.Description) ? "No description" : playlist.Description)
+            </p>
+            <div class="playlist-detail-stats">
+                <span>@Model.Count() @UiText.Get(Context, "tracks").ToLower()</span>
+                <span class="dot">•</span>
+                <span>@TimeSpan.FromTicks(Model.Sum(t => t.Duration.Ticks)).ToString(@"h\:mm\:ss")</span>
+            </div>
+
+            <div class="playlist-detail-actions">
+                @if (Model.Any())
+                {
+                    <button class="btn-primary play-all-btn"
+                            onclick="playPlaylist()"
+                            data-tracks='@System.Text.Json.JsonSerializer.Serialize(Model.Select(t => new { t.TrackId, t.Title, t.ArtistName, t.AudioUrl, t.CoverImageUrl, Duration = t.Duration.ToString(@"m\:ss") }))'>
+                        ▶ Play All
+                    </button>
+                }
+
+                @if (isOwner)
+                {
+                    <form method="post" asp-action="Delete" class="inline-form">
+                        <input type="hidden" name="id" value="@playlist.Id" />
+                        <button type="submit" class="btn-danger" onclick="return confirm('Delete this playlist?')">
+                            🗑 Delete Playlist
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state-card">
+            <div class="empty-icon">🎵</div>
+            <h3>No tracks yet</h3>
+            <p>Go to <a href="/Music/Tracks">Tracks</a> and add some music to this playlist.</p>
+        </div>
+    }
+    else
+    {
+        <div class="track-table">
+            <div class="track-head">
+                <div>#</div>
+                <div>Title</div>
+                <div>@UiText.Get(Context, "artist")</div>
+                <div>@UiText.Get(Context, "album")</div>
+                <div>@UiText.Get(Context, "duration")</div>
+                @if (isOwner)
+                {
+                    <div>Action</div>
+                }
+            </div>
+
+            @{
+                var index = 1;
+            }
+
+            @foreach (var track in Model)
+            {
+                <div class="track-item" data-track-id="@track.TrackId"
+                     data-title="@track.Title" data-artist="@track.ArtistName"
+                     data-audio="@track.AudioUrl" data-cover="@track.CoverImageUrl"
+                     data-duration="@track.Duration.ToString(@"m\:ss")">
+
+                    <div class="track-index">
+                        <span class="index-num">@index</span>
+                        <button class="play-icon" onclick="playTrackFromList(this)">▶</button>
+                    </div>
+
+                    <div class="track-title-cell">
+                        <div class="track-cover-mini"
+                             style="@(string.IsNullOrEmpty(track.CoverImageUrl) ? "" : $"background-image:url({track.CoverImageUrl});background-size:cover;")">
+                        </div>
+                        <div class="track-title-wrap">
+                            <div class="track-name">@track.Title</div>
+                            <div class="track-caption">@track.ArtistName</div>
+                        </div>
+                    </div>
+
+                    <div class="track-col">@track.ArtistName</div>
+                    <div class="track-col">@track.AlbumTitle</div>
+                    <div class="track-col">@track.Duration.ToString(@"m\:ss")</div>
+
+                    @if (isOwner)
+                    {
+                        <div class="track-action">
+                            <form method="post" asp-action="RemoveTrack" class="inline-form">
+                                <input type="hidden" name="playlistId" value="@playlist.Id" />
+                                <input type="hidden" name="trackId" value="@track.TrackId" />
+                                <button type="submit" class="mini-btn btn-remove">✕</button>
+                            </form>
+                        </div>
+                    }
+                </div>
+
+                index++;
+            }
+        </div>
+    }
+</section>
+
+<script src="~/js/player.js"></script>

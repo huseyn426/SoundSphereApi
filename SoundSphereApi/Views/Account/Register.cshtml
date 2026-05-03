@@ -1,0 +1,57 @@
+@model SoundSphereApi.ViewModels.Account.RegisterViewModel
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Register";
+}
+
+<section class="auth-page">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-badge" data-i18n="nav.account">Account</div>
+            <h1 data-i18n="auth.registerTitle">Create account</h1>
+            <p>Join SoundSphere and start building your music space.</p>
+        </div>
+
+        <div asp-validation-summary="All" class="auth-validation"></div>
+
+        <form asp-action="Register" method="post" class="auth-form">
+            <div class="form-group">
+                <label asp-for="FullName"></label>
+                <input asp-for="FullName" class="form-input" />
+                <span asp-validation-for="FullName" class="field-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="UserName"></label>
+                <input asp-for="UserName" class="form-input" />
+                <span asp-validation-for="UserName" class="field-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" class="form-input" />
+                <span asp-validation-for="Email" class="field-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Password"></label>
+                <input asp-for="Password" class="form-input" />
+                <span asp-validation-for="Password" class="field-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ConfirmPassword"></label>
+                <input asp-for="ConfirmPassword" class="form-input" />
+                <span asp-validation-for="ConfirmPassword" class="field-error"></span>
+            </div>
+
+            <button type="submit" class="auth-submit" data-i18n="auth.registerBtn">Register</button>
+        </form>
+
+        <div class="auth-footer">
+            <span data-i18n="auth.haveAccount">Already have an account?</span>
+            <a href="/Account/Login" data-i18n="auth.loginTitle">Login</a>
+        </div>
+    </div>
+</section>

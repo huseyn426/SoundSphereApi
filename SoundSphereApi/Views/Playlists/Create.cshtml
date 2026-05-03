@@ -1,0 +1,39 @@
+﻿@model SoundSphereApi.DTOs.Playlist.PlaylistCreateDto
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Create Playlist";
+}
+
+<section class="auth-page">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-badge">Playlist</div>
+            <h1>Create playlist</h1>
+            <p>Build a new space for your favorite tracks.</p>
+        </div>
+
+        <div asp-validation-summary="All" class="auth-validation"></div>
+
+        <form asp-action="Create" method="post" class="auth-form">
+            <div class="form-group">
+                <label asp-for="Name"></label>
+                <input asp-for="Name" class="form-input" />
+                <span asp-validation-for="Name" class="field-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Description"></label>
+                <input asp-for="Description" class="form-input" />
+                <span asp-validation-for="Description" class="field-error"></span>
+            </div>
+
+            <div class="form-group checkbox-row">
+                <input asp-for="IsPublic" />
+                <label asp-for="IsPublic">Public playlist</label>
+            </div>
+
+            <button type="submit" class="auth-submit">Create Playlist</button>
+        </form>
+    </div>
+</section>

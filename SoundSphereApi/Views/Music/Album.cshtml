@@ -1,0 +1,77 @@
+@model SoundSphereApi.DTOs.Music.AlbumGetDto
+@using SoundSphereApi.DTOs.Music
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var tracks = ViewBag.Tracks as IEnumerable<TrackGetDto>;
+    var trackList = tracks ?? Enumerable.Empty<TrackGetDto>();
+}
+
+<section class="playlist-detail fade-in">
+    <div class="playlist-detail-header">
+        <div class="playlist-detail-cover">
+            <img src="@Model.CoverImageUrl" alt="@Model.Title" />
+        </div>
+        <div class="playlist-detail-info">
+            <div class="playlist-type-badge" data-i18n="common.openAlbum">ALBUM</div>
+            <h1>@Model.Title</h1>
+            <p class="playlist-detail-desc">
+                <span class="fw-bold">@Model.ArtistName</span> • @Model.ReleaseDate.Year • @trackList.Count() tracks
+            </p>
+            
+            <div class="playlist-detail-actions">
+                <button class="btn-primary play-all-btn" onclick="playAllAlbumTracks()">▶ Play</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="track-table">
+        <div class="track-head">
+            <div>#</div>
+            <div data-i18n="playlists.name">Title</div>
+            <div data-i18n="common.plays">Plays</div>
+            <div data-i18n="common.duration">Duration</div>
+        </div>
+
+        @{ var index = 1; }
+        @foreach (var track in trackList)
+        {
+            <div class="track-item"
+                 data-track-id="@track.Id"
+                 data-title="@track.Title"
+                 data-artist="@track.ArtistName"
+                 data-audio="@track.AudioUrl"
+                 data-cover="@track.CoverImageUrl">
+
+                <div class="track-index">
+                    <span class="index-num">@index</span>
+                    <button class="play-icon" onclick="playTrackFromList(this)">▶</button>
+                </div>
+
+                <div class="track-title-cell">
+                    <div class="track-title-wrap">
+                        <a href="/Music/Details/@track.Id" class="track-name">@track.Title</a>
+                    </div>
+                </div>
+
+                <div class="track-col">@track.PlayCount.ToString("N0")</div>
+                <div class="track-col">@track.Duration.ToString(@"m\:ss")</div>
+            </div>
+            index++;
+        }
+    </div>
+</section>
+
+<script>
+    function playAllAlbumTracks() {
+        const items = Array.from(document.querySelectorAll('.track-item'));
+        const tracks = items.map(el => ({
+            title: el.dataset.title,
+            artist: el.dataset.artist,
+            audio: el.dataset.audio,
+            cover: el.dataset.cover
+        }));
+        if (tracks.length > 0) {
+            window.playerSetQueue(tracks, 0);
+        }
+    }
+</script>

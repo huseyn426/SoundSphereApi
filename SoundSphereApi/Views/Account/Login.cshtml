@@ -1,0 +1,46 @@
+@model SoundSphereApi.ViewModels.Account.LoginViewModel
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Login";
+}
+
+<section class="auth-page">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-badge" data-i18n="nav.account">Account</div>
+            <h1 data-i18n="auth.loginTitle">Login</h1>
+            <p>Enter your account details to continue your listening flow.</p>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="auth-success">
+                @TempData["SuccessMessage"]
+            </div>
+        }
+
+        <div asp-validation-summary="All" class="auth-validation"></div>
+
+        <form asp-action="Login" method="post" class="auth-form">
+            <div class="form-group">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" class="form-input" />
+                <span asp-validation-for="Email" class="field-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Password"></label>
+                <input asp-for="Password" class="form-input" />
+                <span asp-validation-for="Password" class="field-error"></span>
+            </div>
+
+            <button type="submit" class="auth-submit" data-i18n="auth.loginBtn">Login</button>
+        </form>
+
+        <div class="auth-footer">
+            <span data-i18n="auth.noAccount">Don't have an account?</span>
+            <a href="/Account/Register" data-i18n="auth.registerTitle">Register</a>
+        </div>
+    </div>
+</section>

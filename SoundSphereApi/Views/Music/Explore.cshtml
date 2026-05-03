@@ -1,0 +1,71 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var genres = ViewBag.Genres as IEnumerable<SoundSphereApi.DTOs.Music.GenreGetDto>;
+    var playlists = ViewBag.PublicPlaylists as IEnumerable<SoundSphereApi.DTOs.Playlist.PlaylistGetDto>;
+}
+
+<section class="explore-page fade-in">
+    <header class="page-header">
+        <h1 data-i18n="explore.title">Explore</h1>
+        <p class="subtitle" data-i18n="explore.subtitle">Discover new music and playlists</p>
+    </header>
+
+    @if (genres != null && genres.Any())
+    {
+        <section class="dashboard-section">
+            <h2 data-i18n="explore.browseGenres">Genres</h2>
+            <div class="genre-grid">
+                @foreach (var genre in genres)
+                {
+                    <a href="/Music/Tracks?search=@genre.Name" class="genre-card">
+                        <div class="genre-name">@genre.Name</div>
+                    </a>
+                }
+            </div>
+        </section>
+    }
+
+    @if (playlists != null && playlists.Any())
+    {
+        <section class="dashboard-section" style="margin-top: 40px;">
+            <h2 data-i18n="explore.featuredPlaylists">Public Playlists</h2>
+            <div class="playlist-grid">
+                @foreach (var pl in playlists)
+                {
+                    <a href="/Playlists/Details/@pl.Id" class="playlist-card clickable">
+                        <div class="playlist-icon">♪</div>
+                        <div class="playlist-name">@pl.Name</div>
+                        <div class="playlist-meta">@pl.UserName</div>
+                    </a>
+                }
+            </div>
+        </section>
+    }
+</section>
+
+<style>
+    .genre-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 16px;
+    }
+    .genre-card {
+        aspect-ratio: 16/9;
+        background: linear-gradient(135deg, #1db954, #191414);
+        border-radius: 12px;
+        padding: 20px;
+        text-decoration: none;
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: flex-end;
+        transition: transform 0.3s ease;
+    }
+    .genre-card:hover {
+        transform: scale(1.05);
+    }
+    .genre-card:nth-child(2n) { background: linear-gradient(135deg, #5038a0, #191414); }
+    .genre-card:nth-child(3n) { background: linear-gradient(135deg, #e1118c, #191414); }
+    .genre-card:nth-child(4n) { background: linear-gradient(135deg, #1e3264, #191414); }
+</style>

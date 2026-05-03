@@ -1,0 +1,120 @@
+@model SoundSphereApi.DTOs.Music.TrackGetDto
+@using SoundSphereApi.Helpers
+@using System.Text.Json
+@inject SoundSphereApi.Services.Interfaces.IPlaylistService PlaylistService
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = Model.Title;
+    var comments = ViewBag.Comments as IEnumerable<SoundSphereApi.DTOs.Social.CommentGetDto>;
+    var userId = Context.Session.GetInt32("UserId");
+    var playlists = Enumerable.Empty<SoundSphereApi.DTOs.Playlist.PlaylistGetDto>();
+    if (userId != null)
+    {
+        playlists = (await PlaylistService.GetAllPlaylistsAsync()).Where(x => x.UserId == userId.Value);
+    }
+}
+
+<section class="playlist-detail">
+    <div class="playlist-detail-header">
+        <div class="playlist-detail-cover">
+            @if (!string.IsNullOrEmpty(Model.CoverImageUrl))
+            {
+                <img src="@Model.CoverImageUrl" alt="@Model.Title" />
+            }
+            else
+            {
+                <div class="playlist-cover-icon">🎵</div>
+            }
+        </div>
+        <div class="playlist-detail-info">
+            <div class="playlist-type-badge">@Model.GenreName</div>
+            <h1>@Model.Title</h1>
+            <p class="playlist-detail-desc" style="font-size: 1.2rem; color: #fff;">
+                @Model.ArtistName
+            </p>
+            <div class="playlist-detail-stats">
+                <span>Album: @Model.AlbumTitle</span>
+                <span class="dot">•</span>
+                <span>@Model.PlayCount @UiText.Get(Context, "plays")</span>
+                <span class="dot">•</span>
+                <span>@Model.Duration.ToString(@"m\:ss")</span>
+            </div>
+
+            <div class="playlist-detail-actions" style="margin-top: 16px;">
+                <button class="btn-primary play-all-btn"
+                        onclick="playSingleTrack('@Model.Title.Replace("'", "\\'")', '@Model.ArtistName.Replace("'", "\\'")', '@Model.AudioUrl', '@Model.CoverImageUrl', '@Model.Duration.ToString(@"m\:ss")', '@Model.Id')">
+                    ▶ Play Track
+                </button>
+
+                @if (userId != null)
+                {
+                    <button type="button" class="ss-add-playlist-btn" style="padding: 10px 20px;" onclick="openAddToPlaylistModal(@Model.Id)">
+                        + Playlist
+                    </button>
+                    <form method="post" asp-action="ToggleLike" class="inline-form" style="margin: 0;">
+                        <input type="hidden" name="trackId" value="@Model.Id" />
+                        <button type="submit" class="btn-secondary" style="border-radius: 999px; padding: 10px 20px;">
+                            🤍 Like
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-sections" style="margin-top: 32px;">
+        <div class="profile-section">
+            <div class="section-header">
+                <h2>Comments (@(comments?.Count() ?? 0))</h2>
+            </div>
+            
+            @if (userId != null)
+            {
+                <form method="post" asp-action="AddComment" class="profile-form" style="max-width: 100%; display: flex; flex-direction: row; align-items: flex-end; gap: 12px; margin-bottom: 24px;">
+                    <input type="hidden" name="trackId" value="@Model.Id" />
+                    <div class="form-group" style="flex: 1; margin: 0;">
+                        <input type="text" name="content" class="form-input" placeholder="Write a comment..." required />
+                    </div>
+                    <button type="submit" class="btn-primary" style="white-space: nowrap;">Post</button>
+                </form>
+            }
+            else
+            {
+                <div class="empty-state-card" style="padding: 24px; margin-bottom: 24px;">
+                    <p><a href="/Account/Login" style="color: #1db954;">Log in</a> to leave a comment.</p>
+                </div>
+            }
+
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                @if (comments != null && comments.Any())
+                {
+                    foreach (var comment in comments)
+                    {
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 16px; border-radius: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <strong style="color: #fff;">@comment.UserName</strong>
+                                <span style="color: #94a3b8; font-size: 0.8rem;">@comment.CreatedAt.ToString("MMM dd, yyyy")</span>
+                            </div>
+                            <div style="color: #c4ccd8; line-height: 1.5;">@comment.Content</div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div style="text-align: center; color: #94a3b8; padding: 20px;">
+                        No comments yet. Be the first to share your thoughts!
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@if (userId != null)
+{
+    <script type="application/json" id="ss-user-playlists-json">@Html.Raw(JsonSerializer.Serialize(playlists.Select(p => new { id = p.Id, name = p.Name, coverImageUrl = p.CoverImageUrl })))</script>
+}
+
+<script src="~/js/player.js" asp-append-version="true"></script>
+<script src="~/js/playlists-ui.js" asp-append-version="true"></script>

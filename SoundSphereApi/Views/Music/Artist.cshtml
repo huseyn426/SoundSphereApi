@@ -1,0 +1,115 @@
+@model SoundSphereApi.DTOs.Music.ArtistGetDto
+@using SoundSphereApi.DTOs.Music
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var tracks = ViewBag.Tracks as IEnumerable<TrackGetDto>;
+    var trackList = tracks ?? Enumerable.Empty<TrackGetDto>();
+}
+
+<section class="artist-page fade-in">
+    <div class="artist-hero" style="background-image: linear-gradient(to bottom, rgba(0,0,0,0.5), #0a0a0a), url('@Model.ImageUrl');">
+        <div class="artist-hero-content">
+            <div class="verified-badge">✓ Verified Artist</div>
+            <h1>@Model.Name</h1>
+            <p class="monthly-listeners">1,234,567 monthly listeners</p>
+        </div>
+    </div>
+
+    <div class="artist-content">
+        <div class="artist-actions">
+            <button class="btn-primary play-all-btn" onclick="playAllArtistTracks()">▶ Play</button>
+            <button class="btn-secondary">Follow</button>
+        </div>
+
+        <section class="dashboard-section">
+            <h2 data-i18n="artist.popularTracks">Popular Tracks</h2>
+            <div class="track-table">
+                @{ var index = 1; }
+                @foreach (var track in trackList)
+                {
+                    <div class="track-item"
+                         data-track-id="@track.Id"
+                         data-title="@track.Title"
+                         data-artist="@track.ArtistName"
+                         data-audio="@track.AudioUrl"
+                         data-cover="@track.CoverImageUrl">
+
+                        <div class="track-index">
+                            <span class="index-num">@index</span>
+                            <button class="play-icon" onclick="playTrackFromList(this)">▶</button>
+                        </div>
+
+                        <div class="track-title-cell">
+                            <div class="track-cover-mini" style="background-image:url('@track.CoverImageUrl');"></div>
+                            <div class="track-title-wrap">
+                                <a href="/Music/Details/@track.Id" class="track-name">@track.Title</a>
+                            </div>
+                        </div>
+
+                        <div class="track-col">@track.PlayCount.ToString("N0")</div>
+                        <div class="track-col">@track.Duration.ToString(@"m\:ss")</div>
+                    </div>
+                    index++;
+                }
+            </div>
+        </section>
+    </div>
+</section>
+
+<script>
+    function playAllArtistTracks() {
+        const items = Array.from(document.querySelectorAll('.track-item'));
+        const tracks = items.map(el => ({
+            title: el.dataset.title,
+            artist: el.dataset.artist,
+            audio: el.dataset.audio,
+            cover: el.dataset.cover
+        }));
+        if (tracks.length > 0) {
+            window.playerSetQueue(tracks, 0);
+        }
+    }
+</script>
+
+<style>
+    .artist-hero {
+        height: 400px;
+        background-size: cover;
+        background-position: center;
+        display: flex;
+        align-items: flex-end;
+        padding: 40px;
+        margin: -24px -24px 24px -24px;
+    }
+    .artist-hero-content h1 {
+        font-size: 6rem;
+        font-weight: 900;
+        margin: 10px 0;
+    }
+    .verified-badge {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: #3d91f4;
+        font-weight: 700;
+    }
+    .monthly-listeners {
+        color: #fff;
+        font-weight: 500;
+    }
+    .artist-actions {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 40px;
+        align-items: center;
+    }
+    .play-all-btn {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+</style>

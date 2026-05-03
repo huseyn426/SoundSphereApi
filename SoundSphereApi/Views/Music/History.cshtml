@@ -1,0 +1,72 @@
+@model IEnumerable<SoundSphereApi.DTOs.Analytics.ListeningHistoryGetDto>
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="tracks-page">
+    <div class="tracks-toolbar">
+        <div>
+            <div class="page-label" data-i18n="nav.yourMusic">YOUR MUSIC</div>
+            <h1 data-i18n="nav.history">Listening History</h1>
+            <p class="tracks-subtitle" data-i18n="history.subtitle">Your recently played tracks</p>
+        </div>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="empty-state-card">
+            <div class="empty-icon">🕒</div>
+            <h3 data-i18n="history.noHistory">No history</h3>
+            <p data-i18n="home.startListening">Start listening and build your history!</p>
+        </div>
+    }
+    else
+    {
+        <div class="track-table">
+            <div class="track-head">
+                <div>#</div>
+                <div data-i18n="playlists.name">Title</div>
+                <div data-i18n="tracks.artist">Artist</div>
+                <div data-i18n="history.playedOn">Played on</div>
+                <div data-i18n="admin.actions">Action</div>
+            </div>
+
+            @{ var index = 1; }
+            @foreach (var entry in Model)
+            {
+                <div class="track-item"
+                     data-track-id="@entry.TrackId"
+                     data-title="@entry.TrackTitle"
+                     data-artist="@entry.ArtistName"
+                     data-audio="@entry.AudioUrl"
+                     data-cover="@entry.CoverImageUrl">
+
+                    <div class="track-index">
+                        <span class="index-num">@index</span>
+                        <button class="play-icon" onclick="playTrackFromList(this)">▶</button>
+                    </div>
+
+                    <div class="track-title-cell">
+                        <div class="track-cover-mini"
+                             style="@(string.IsNullOrEmpty(entry.CoverImageUrl) ? "" : $"background-image:url({entry.CoverImageUrl});background-size:cover;")">
+                        </div>
+                        <div class="track-title-wrap">
+                            <a href="/Music/Details/@entry.TrackId" class="track-name" style="text-decoration: none; color: inherit;">@entry.TrackTitle</a>
+                            <div class="track-caption">@entry.ArtistName</div>
+                        </div>
+                    </div>
+
+                    <div class="track-col">@entry.ArtistName</div>
+                    <div class="track-col">@entry.PlayedAt.ToString("MMM dd, HH:mm")</div>
+
+                    <div class="track-action">
+                         <a href="/Music/Details/@entry.TrackId" class="mini-btn">→</a>
+                    </div>
+                </div>
+                index++;
+            }
+        </div>
+    }
+</section>
+
+<script src="~/js/player.js"></script>

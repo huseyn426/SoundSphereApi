@@ -1,0 +1,335 @@
+@using SoundSphereApi.DTOs.Music
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Admin - Catalog";
+    var genres = ViewBag.Genres as IEnumerable<GenreGetDto>;
+    var artists = ViewBag.Artists as IEnumerable<ArtistGetDto>;
+    var albums = ViewBag.Albums as IEnumerable<AlbumGetDto>;
+}
+
+<section class="admin-page fade-in">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 24px;">
+        <div>
+            <div class="page-label">Admin Panel</div>
+            <h1>Catalog Management</h1>
+        </div>
+        <div class="catalog-actions">
+            <button class="btn-primary" id="addBtn" onclick="openModal('genre')">+ Add Genre</button>
+        </div>
+    </div>
+
+    <div class="tabs-container">
+        <button class="tab-btn active" onclick="switchTab('genres')">Genres</button>
+        <button class="tab-btn" onclick="switchTab('artists')">Artists</button>
+        <button class="tab-btn" onclick="switchTab('albums')">Albums</button>
+    </div>
+
+    <!-- GENRES TAB -->
+    <div id="genres-tab" class="tab-content" style="display:block;">
+        <div class="admin-table">
+            <div class="admin-table-head" style="grid-template-columns: 80px 1fr 100px;">
+                <div>ID</div>
+                <div>Name</div>
+                <div>Actions</div>
+            </div>
+            @foreach (var g in genres ?? Enumerable.Empty<GenreGetDto>())
+            {
+                <div class="admin-table-row" id="row-genre-@g.Id" style="grid-template-columns: 80px 1fr 100px;">
+                    <div>@g.Id</div>
+                    <div style="font-weight:bold; color:#fff;">@g.Name</div>
+                    <div class="admin-actions">
+                        <button class="mini-btn" onclick="openModal('genre', { id: @g.Id, name: '@Html.Raw(g.Name.Replace("'", "\\'"))' })">✏️</button>
+                        <button class="mini-btn btn-remove" onclick="deleteEntity('Genre', @g.Id, '@Html.Raw(g.Name.Replace("'", "\\'"))')">🗑️</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ARTISTS TAB -->
+    <div id="artists-tab" class="tab-content" style="display:none;">
+        <div class="admin-table">
+            <div class="admin-table-head" style="grid-template-columns: 80px 3fr 1fr 100px;">
+                <div>ID</div>
+                <div>Artist</div>
+                <div>Bio Length</div>
+                <div>Actions</div>
+            </div>
+            @foreach (var a in artists ?? Enumerable.Empty<ArtistGetDto>())
+            {
+                <div class="admin-table-row" id="row-artist-@a.Id" style="grid-template-columns: 80px 3fr 1fr 100px;">
+                    <div>@a.Id</div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        @if(!string.IsNullOrEmpty(a.ImageUrl))
+                        {
+                            <div class="track-cover-mini" style="background-image:url('@a.ImageUrl'); border-radius:50%;"></div>
+                        }
+                        else
+                        {
+                            <div class="track-cover-mini" style="background:#22c55e; border-radius:50%; display:flex; align-items:center; justify-content:center;">@a.Name[0]</div>
+                        }
+                        <span style="font-weight:bold; color:#fff;">@a.Name</span>
+                    </div>
+                    <div>@(a.Bio?.Length ?? 0) chars</div>
+                    <div class="admin-actions">
+                        <button class="mini-btn" onclick="openModal('artist', { id: @a.Id, name: '@Html.Raw(a.Name.Replace("'", "\\'"))', bio: '@Html.Raw((a.Bio ?? "").Replace("'", "\\'"))', imageUrl: '@(a.ImageUrl ?? "")' })">✏️</button>
+                        <button class="mini-btn btn-remove" onclick="deleteEntity('Artist', @a.Id, '@Html.Raw(a.Name.Replace("'", "\\'"))')">🗑️</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ALBUMS TAB -->
+    <div id="albums-tab" class="tab-content" style="display:none;">
+        <div class="admin-table">
+            <div class="admin-table-head" style="grid-template-columns: 80px 3fr 2fr 1fr 100px;">
+                <div>ID</div>
+                <div>Album</div>
+                <div>Artist</div>
+                <div>Year</div>
+                <div>Actions</div>
+            </div>
+            @foreach (var a in albums ?? Enumerable.Empty<AlbumGetDto>())
+            {
+                <div class="admin-table-row" id="row-album-@a.Id" style="grid-template-columns: 80px 3fr 2fr 1fr 100px;">
+                    <div>@a.Id</div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div class="track-cover-mini" style="background-image:url('@(a.CoverImageUrl ?? "")');"></div>
+                        <span style="font-weight:bold; color:#fff;">@a.Title</span>
+                    </div>
+                    <div>@a.ArtistName</div>
+                    <div>@a.ReleaseDate.Year</div>
+                    <div class="admin-actions">
+                        <button class="mini-btn" onclick="openModal('album', { id: @a.Id, title: '@Html.Raw(a.Title.Replace("'", "\\'"))', artistId: @a.ArtistId, releaseYear: @a.ReleaseDate.Year, imageUrl: '@(a.CoverImageUrl ?? "")' })">✏️</button>
+                        <button class="mini-btn btn-remove" onclick="deleteEntity('Album', @a.Id, '@Html.Raw(a.Title.Replace("'", "\\'"))')">🗑️</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- MODAL -->
+<div id="catalogModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; margin-bottom: 20px;">
+            <h2 id="modalTitle" style="margin:0; color:#fff;">Modal Title</h2>
+            <button class="mini-btn" onclick="closeModal()">✕</button>
+        </div>
+
+        <form id="catalogForm" onsubmit="submitForm(event)" class="profile-form">
+            <input type="hidden" id="cId" />
+            <input type="hidden" id="cType" />
+
+            <!-- GENRE FIELDS -->
+            <div id="fields-genre" style="display:none;">
+                <div class="form-group">
+                    <label>Name *</label>
+                    <input type="text" id="gName" class="form-input" />
+                </div>
+            </div>
+
+            <!-- ARTIST FIELDS -->
+            <div id="fields-artist" style="display:none;">
+                <div class="form-group">
+                    <label>Name *</label>
+                    <input type="text" id="artName" class="form-input" />
+                </div>
+                <div class="form-group">
+                    <label>Bio</label>
+                    <textarea id="artBio" class="form-input" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Image URL</label>
+                    <input type="text" id="artImg" class="form-input" />
+                </div>
+            </div>
+
+            <!-- ALBUM FIELDS -->
+            <div id="fields-album" style="display:none;">
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input type="text" id="albTitle" class="form-input" />
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Artist *</label>
+                        <select id="albArtist" class="form-input">
+                            <option value="">Select Artist</option>
+                            @foreach (var art in artists ?? Enumerable.Empty<ArtistGetDto>()) { <option value="@art.Id">@art.Name</option> }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Release Year *</label>
+                        <input type="number" id="albYear" class="form-input" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Cover Image URL</label>
+                    <input type="text" id="albImg" class="form-input" />
+                </div>
+            </div>
+
+            <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:20px;">
+                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.tabs-container { display:flex; gap:12px; border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:24px; padding-bottom:8px; }
+.tab-btn { background:none; border:none; color:#a3a3a3; font-size:16px; font-weight:600; cursor:pointer; padding:8px 16px; border-radius:8px; transition:0.2s; }
+.tab-btn:hover { color:#fff; background:rgba(255,255,255,0.05); }
+.tab-btn.active { color:#fff; background:#22c55e; }
+</style>
+
+<script>
+    let currentTab = 'genres';
+    let currentMode = 'add'; // add or edit
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+        
+        event.currentTarget.classList.add('active');
+        document.getElementById(tab + '-tab').style.display = 'block';
+
+        const entityType = tab === 'genres' ? 'Genre' : (tab === 'artists' ? 'Artist' : 'Album');
+        document.getElementById('addBtn').innerText = `+ Add ${entityType}`;
+        document.getElementById('addBtn').setAttribute('onclick', `openModal('${entityType.toLowerCase()}')`);
+    }
+
+    function openModal(type, data = null) {
+        currentMode = data ? 'edit' : 'add';
+        document.getElementById('cType').value = type;
+        document.getElementById('cId').value = data ? data.id : '';
+        
+        const titleType = type.charAt(0).toUpperCase() + type.slice(1);
+        document.getElementById('modalTitle').innerText = `${data ? 'Edit' : 'Add'} ${titleType}`;
+
+        document.getElementById('fields-genre').style.display = 'none';
+        document.getElementById('fields-artist').style.display = 'none';
+        document.getElementById('fields-album').style.display = 'none';
+        
+        document.getElementById('gName').required = false;
+        document.getElementById('artName').required = false;
+        document.getElementById('albTitle').required = false;
+        document.getElementById('albArtist').required = false;
+        document.getElementById('albYear').required = false;
+
+        document.getElementById('catalogForm').reset();
+
+        if (type === 'genre') {
+            document.getElementById('fields-genre').style.display = 'block';
+            document.getElementById('gName').required = true;
+            if (data) document.getElementById('gName').value = data.name;
+        } else if (type === 'artist') {
+            document.getElementById('fields-artist').style.display = 'block';
+            document.getElementById('artName').required = true;
+            if (data) {
+                document.getElementById('artName').value = data.name;
+                document.getElementById('artBio').value = data.bio || '';
+                document.getElementById('artImg').value = data.imageUrl || '';
+            }
+        } else if (type === 'album') {
+            document.getElementById('fields-album').style.display = 'block';
+            document.getElementById('albTitle').required = true;
+            document.getElementById('albArtist').required = true;
+            document.getElementById('albYear').required = true;
+            if (data) {
+                document.getElementById('albTitle').value = data.title;
+                document.getElementById('albArtist').value = data.artistId;
+                document.getElementById('albYear').value = data.releaseYear;
+                document.getElementById('albImg').value = data.imageUrl || '';
+            }
+        }
+
+        document.getElementById('catalogModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('catalogModal').style.display = 'none';
+    }
+
+    function showToast(msg, isSuccess) {
+        const toast = document.createElement('div');
+        toast.className = isSuccess ? 'toast-success' : 'toast-error';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '20px';
+        toast.style.right = '20px';
+        toast.style.zIndex = '9999';
+        toast.innerText = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    async function submitForm(e) {
+        e.preventDefault();
+        
+        const type = document.getElementById('cType').value;
+        const id = document.getElementById('cId').value;
+        const method = currentMode === 'add' ? 'POST' : 'PUT';
+        
+        let url = `/AdminPanel/${currentMode === 'add' ? 'Create' : 'Edit'}${type.charAt(0).toUpperCase() + type.slice(1)}`;
+        if (currentMode === 'edit') url += `?id=${id}`;
+
+        let dto = {};
+        if (type === 'genre') {
+            dto = { name: document.getElementById('gName').value };
+        } else if (type === 'artist') {
+            dto = {
+                name: document.getElementById('artName').value,
+                bio: document.getElementById('artBio').value,
+                imageUrl: document.getElementById('artImg').value
+            };
+        } else if (type === 'album') {
+            dto = {
+                title: document.getElementById('albTitle').value,
+                artistId: parseInt(document.getElementById('albArtist').value),
+                releaseDate: new Date(document.getElementById('albYear').value, 0, 1).toISOString(),
+                coverImageUrl: document.getElementById('albImg').value
+            };
+        }
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dto)
+            });
+            const data = await res.json().catch(() => null);
+            
+            if (res.ok && data?.success) {
+                showToast('Saved successfully ✓', true);
+                closeModal();
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showToast(data?.message || 'Error saving data.', false);
+            }
+        } catch (err) {
+            showToast('Connection error', false);
+        }
+    }
+
+    async function deleteEntity(type, id, name) {
+        if (!confirm(`Delete ${type} '${name}'? This cannot be undone.`)) return;
+
+        try {
+            const res = await fetch(`/AdminPanel/Delete${type}?id=${id}`, { method: 'DELETE' });
+            const data = await res.json().catch(() => null);
+            
+            if (res.ok && data?.success) {
+                showToast('Deleted successfully ✓', true);
+                document.getElementById(`row-${type.toLowerCase()}-${id}`).remove();
+            } else {
+                showToast(data?.message || 'Delete failed', false);
+            }
+        } catch (err) {
+            showToast('Connection error', false);
+        }
+    }
+</script>

@@ -1,0 +1,46 @@
+@model IEnumerable<SoundSphereApi.DTOs.Playlist.PlaylistGetDto>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Playlists";
+}
+
+<section class="tracks-page">
+    <div class="tracks-toolbar">
+        <div>
+            <div class="page-label">Collection</div>
+            <h1>My Playlists</h1>
+            <p class="tracks-subtitle">Manage your personal playlists and keep your music organized.</p>
+        </div>
+
+        <a href="/Playlists/Create" class="btn-primary">+ Create Playlist</a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state-card">
+            <div class="empty-icon">📋</div>
+            <h3>No playlists yet</h3>
+            <p>Create your first playlist and start adding your favorite tracks.</p>
+            <a href="/Playlists/Create" class="btn-primary" style="margin-top:12px;">Create Playlist</a>
+        </div>
+    }
+    else
+    {
+        <div class="playlist-grid">
+            @foreach (var playlist in Model)
+            {
+                <a href="/Playlists/Details/@playlist.Id" class="playlist-card clickable">
+                    <div class="playlist-icon">♪</div>
+                    <div class="playlist-name">@playlist.Name</div>
+                    <div class="playlist-desc">
+                        @(string.IsNullOrWhiteSpace(playlist.Description) ? "No description" : playlist.Description)
+                    </div>
+                    <div class="playlist-meta">
+                        @(playlist.IsPublic ? "Public" : "Private")
+                    </div>
+                </a>
+            }
+        </div>
+    }
+</section>
